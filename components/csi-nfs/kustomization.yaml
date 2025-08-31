@@ -17,3 +17,12 @@ helmcharts:
 resources:
   - namespace.yaml
   - storageclass.yaml
+
+
+patches:
+  - path: patch-change-fsGroupPolicy.yaml
+    target:
+      group: storage.k8s.io
+      version: v1
+      kind: CSIDriver
+      name: nfs.csi.k8s.io

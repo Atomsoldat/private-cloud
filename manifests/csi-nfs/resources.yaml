@@ -614,6 +614,6 @@ metadata:
   name: nfs.csi.k8s.io
 spec:
   attachRequired: false
-  fsGroupPolicy: File
+  fsGroupPolicy: None
   volumeLifecycleModes:
   - Persistent
