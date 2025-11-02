@@ -1,0 +1,43 @@
+# This issuer can be used for sandbox stuff and bootstrapping a local CA issuer,
+# among other things
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: selfsigned-issuer
+spec:
+  selfSigned: {}
+---
+# bootstrap the CA certificate
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: nekropolis-selfsigned-ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  commonName: nekropolis-selfsigned-ca
+  subject:
+    organizations:
+      - lichturm.de
+    organizationalUnits:
+      - Nekropolis
+    countries:
+      - DE
+  secretName: root-secret
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: selfsigned-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+---
+# and then use that certificate to sign other certificates
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: local-ca-issuer
+spec:
+  ca:
+    # `ClusterIssuer` resource is not namespaced, so `secretName` is assumed to reference secret in `cert-manager` namespace.
+    secretName: root-secret

@@ -1,0 +1,12 @@
+
+# https://github.com/cert-manager/cert-manager/tree/master/deploy/charts/cert-manager
+helmCharts:
+  - name: cert-manager
+    repo: https://charts.jetstack.io
+    version: v1.19.1
+    releaseName: certmanager-release
+    namespace: cert-manager
+    valuesFile: values.yaml
+resources:
+  - namespace.yaml
+  - clusterissuer.yaml
