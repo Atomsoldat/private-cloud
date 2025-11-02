@@ -1,0 +1,55 @@
+# https://github.com/openbao/openbao-helm/blob/main/charts/openbao/values.yaml
+
+global:
+  serverTelemetry:
+    prometheusOperator: false
+  metrics:
+    enabled: false
+
+server:
+  extraSecretEnvironmentVars:
+    - envName: BAO_PG_CONNECTION_URL
+      secretName: openbao
+      secretKey: BAO_PG_CONNECTION_URL
+  auditStorage:
+    enabled: true
+    storageClass: cephfs
+    size: 10Gi
+  dataStorage:
+    enabled: true
+    storageClass: cephfs
+    size: 10Gi
+  ha:
+    enabled: true
+    # the raft storage backend seemed to end up with a corrupted database
+    # during restarts; seems like a bad thing to have, besides, postgres is cooler
+    # https://openbao.org/docs/configuration/storage/postgresql/
+    raft:
+      enabled: false
+    config: |
+      ui = true
+
+      listener "tcp" {
+        tls_disable = 1
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+      }
+      storage "postgresql" {
+        ha_enabled = "true"
+      }
+
+      service_registration "kubernetes" {}
+    
+serverTelemetry:
+  prometheusRules:
+    enabled: false
+  serviceMonitor:
+    enabled: false
+
+ui:
+  enabled: true
+  serviceType: LoadBalancer
+  annotations:
+    kube-vip.io/loadbalancerIPs: 192.168.13.8
+csi:
+  enabled: false
