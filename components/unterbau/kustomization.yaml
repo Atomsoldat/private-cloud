@@ -8,6 +8,8 @@ resources:
   - application-cilium.yaml
   - application-cluster-api.yaml
   - application-cnpg.yaml
+  - application-csi-cephfs.yaml
+  - application-csi-crds.yaml
   - application-csi-nfs.yaml
   - application-external-secrets.yaml
   - application-hardcoredns.yaml
