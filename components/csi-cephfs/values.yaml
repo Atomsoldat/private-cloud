@@ -1,0 +1,78 @@
+rbac:
+  create: true
+  leastPrivileges: true
+
+provisioner:
+  replicaCount: 3
+
+# Configuration for the CSI to connect to the cluster
+# See: https://github.com/ceph/ceph-csi/blob/devel/examples/README.md
+# See: https://github.com/ceph/ceph-csi/blob/devel/deploy/csi-config-map-sample.yaml
+# Example:
+csiConfig:
+  # the clusterID should uniquely identify a given ceph cluster
+  # it is also used by the storage class
+  # we are using the output of "ceph fsid"
+  - clusterID: "94563514-dd45-48e9-80b0-ba2f058f6d30"
+    monitors:
+      - 192.168.9.20
+      - 192.168.9.21
+      - 192.168.9.22
+    cephFS:
+      # subvolumes will be created in this subvolume group, which needs to be created in
+      # the CephFS volume beforehand; each PV will get its own subvolume
+      subvolumeGroup: "nekropolis-csi"
+
+# we create this separately
+secret:
+  create: false
+
+# This is a sample configmap that helps define a Ceph configuration as required
+# by the CSI plugins.
+# Sample ceph.conf available at
+# https://github.com/ceph/ceph/blob/master/src/sample.ceph.conf Detailed
+# documentation is available at
+# https://docs.ceph.com/en/latest/rados/configuration/ceph-conf/
+# to get a start: `ceph config generate-minimal-conf`
+cephconf: |
+  [global]
+    auth_cluster_required = cephx
+    auth_service_required = cephx
+    auth_client_required = cephx
+
+    # ceph-fuse which uses libfuse2 by default has write buffer size of 2KiB
+    # adding 'fuse_big_writes = true' option by default to override this limit
+    # see https://github.com/ceph/ceph-csi/issues/1928
+    fuse_big_writes = true
+
+    # minimal configuration generated with `ceph config generate-minimal-conf`
+    fsid = 94563514-dd45-48e9-80b0-ba2f058f6d30
+    mon_host = [v2:192.168.9.20:3300/0,v1:192.168.9.20:6789/0] [v2:192.168.9.21:3300/0,v1:192.168.9.21:6789/0] [v2:192.168.9.22:3300/0,v1:192.168.9.22:6789/0]
+
+storageClass:
+  create: true
+  name: cephfs
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+
+  # String representing a Ceph cluster to provision storage from.
+  # Should be unique across all Ceph clusters in use for provisioning,
+  # cannot be greater than 36 bytes in length, and should remain immutable for
+  # the lifetime of the StorageClass in use.
+  clusterID: "94563514-dd45-48e9-80b0-ba2f058f6d30"
+  # (required) CephFS filesystem name into which the volumes will be created
+  fsName: cephfs
+
+  # The secrets have to contain user and/or Ceph admin credentials.
+  # If the Namespaces are not specified, the secrets are assumed to
+  # be in the Release namespace.
+  # (we set this in the kustomization.yaml)
+  provisionerSecret: csi-cephfs-secret
+  provisionerSecretNamespace: ""
+  controllerExpandSecret: csi-cephfs-secret
+  controllerExpandSecretNamespace: ""
+  nodeStageSecret: csi-cephfs-secret
+  nodeStageSecretNamespace: ""
+  reclaimPolicy: Delete
+  allowVolumeExpansion: true
+  mountOptions: []
