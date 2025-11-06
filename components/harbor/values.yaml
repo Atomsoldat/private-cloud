@@ -1,0 +1,126 @@
+expose:
+  type: loadBalancer
+  loadbalancer:
+    annotations:
+      kube-vip.io/loadbalancerIPs: 192.168.13.5
+  tls:
+    auto:
+      commonName: harbor.irminsul
+
+  persistence:
+    persistentVolumeClaim:
+      registry:
+        storageClass: cephfs
+        size: 100Gi
+      jobservice:
+        storageClass: cephfs
+      database:
+        storageClass: cephfs
+      redis:
+        storageClass: cephfs
+      trivy:
+        storageClass: cephfs
+
+# This secret will be used to set the Admin-Password once during  initialisation
+existingSecretAdminPassword: harbor-core
+# `secretKey` is apparently used for encryption, and  must be a 16 character string
+# this seems to have a different meaning from the "which entry in an existing secret do i want?" it is used
+# for in other places
+# the key `secretKey` is expected in the provided secret
+existingSecretSecretKey: harbor-core
+# TODO: do we want this?
+# caSecretName:
+# caBundleSecretName:
+
+# TODO: S3 storage sounds cool, we should mess around with that
+# TODO: we could consider using internal TLS
+# TODO: we might want to use imagepullsecrets for e.g. Dockerhub
+# TODO: Take a look at trivy settings
+# TODO: using SSL for postgresql would be neat
+
+
+core:
+  # this secret must contain a key named `secret` which must be a 16 character string
+  # this seems to be different from secretKey, unfortunate naming, really
+  existingSecret:
+
+  # this needs to be a secret containing the keys `tls.key`  and `tls.crt`
+  # they will be used for token decryption and encryption
+  # we should handle this with cert-manager
+  secretName:
+
+  # TODO: do we want these? i don't think so, since we provide our own encryption secret
+  #tokenKey:
+  #tokenCert:
+
+  # this secret must be a string of 32 characters
+  existingXsrfSecret: harbor-core
+  existingXsrfSecretKey: XSRF_KEY
+
+database:
+  type: external
+  external:
+    host: "abc.def"
+    port: "5432"
+    username: "harbor"
+    coreDatabase: "harbor"
+    # if using existing secret, the key must be "password"
+    existingSecret: "harbor-db-standard-user"
+    # "disable" - No SSL
+    # "require" - Always SSL (skip verification)
+    # "verify-ca" - Always SSL (verify that the certificate presented by the
+    # server was signed by a trusted CA)
+    # "verify-full" - Always SSL (verify that the certification presented by the
+    # server was signed by a trusted CA and the server host name matches the one
+    # in the certificate)
+    sslmode: "disable"
+  # The maximum number of connections in the idle connection pool per pod (core+exporter).
+  # If it <=0, no idle connections are retained.
+  maxIdleConns: 100
+  # The maximum number of open connections to the database per pod (core+exporter).
+  # If it <= 0, then there is no limit on the number of open connections.
+  # Note: the default number of connections is 1024 for harbor's postgres.
+  maxOpenConns: 900
+  ## Additional deployment annotations
+  podAnnotations: {}
+  ## Additional deployment labels
+  podLabels: {}
+
+
+redis:
+  # if external Redis is used, set "type" to "external"
+  # and fill the connection information in "external" section
+  type: external
+  external:
+    # support redis, redis+sentinel
+    # addr for redis: <host_redis>:<port_redis>
+    # addr for redis+sentinel: <host_sentinel1>:<port_sentinel1>,<host_sentinel2>:<port_sentinel2>,<host_sentinel3>:<port_sentinel3>
+    addr: "192.168.0.2:6379"
+    # The name of the set of Redis instances to monitor, it must be set to support redis+sentinel
+    sentinelMasterSet: ""
+    # TLS configuration for redis connection
+    # only server-authentication is supported, mTLS for redis connection is not supported
+    # tls connection will be disable by default
+    # Once `tlsOptions.enable` set as true, tls/ssl connection will be used for redis
+    # Please set the `caBundleSecretName` in this configuration file which conatins redis server rootCA if it is self-signed.
+    # The secret must contain keys named "ca.crt" which will be injected into the trust store
+    tlsOptions:
+      enable: false
+    # The "coreDatabaseIndex" must be "0" as the library Harbor
+    # used doesn't support configuring it
+    # harborDatabaseIndex defaults to "0", but it can be configured to "6", this config is optional
+    # cacheLayerDatabaseIndex defaults to "0", but it can be configured to "7", this config is optional
+    coreDatabaseIndex: "0"
+    jobserviceDatabaseIndex: "1"
+    registryDatabaseIndex: "2"
+    trivyAdapterIndex: "5"
+    # harborDatabaseIndex: "6"
+    # cacheLayerDatabaseIndex: "7"
+    # username field can be an empty string, and it will be authenticated against the default user
+    # If using existingSecret, the key must be REDIS_PASSWORD, if ACL mode enabled, also inlcudes data of username, the keys must be REDIS_USERNAME
+    existingSecret: ""
+  ## Additional deployment annotations
+  podAnnotations: {}
+  ## Additional deployment labels
+  podLabels: {}
+
