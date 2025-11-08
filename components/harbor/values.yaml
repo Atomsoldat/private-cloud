@@ -37,12 +37,15 @@ existingSecretSecretKey: harbor-core
 # TODO: we might want to use imagepullsecrets for e.g. Dockerhub
 # TODO: Take a look at trivy settings
 # TODO: using SSL for postgresql would be neat
+# TODO: What is the purpose of specifying caSecretName? Why do we want to download the CA certificate in the portal?
+# TODO: Properly configure database connection limit
+# TODO: Write above each external secret what they are used for
 
 
 core:
   # this secret must contain a key named `secret` which must be a 16 character string
   # this seems to be different from secretKey, unfortunate naming, really
-  existingSecret:
+  existingSecret: harbor-core
 
   # this needs to be a secret containing the keys `tls.key`  and `tls.crt`
   # they will be used for token decryption and encryption
@@ -56,6 +59,21 @@ core:
   # this secret must be a string of 32 characters
   existingXsrfSecret: harbor-core
   existingXsrfSecretKey: XSRF_KEY
+
+registry:
+  existingSecret: harbor-registry
+  # Key within the existing secret for the registry service secret
+  existingSecretKey: REGISTRY_HTTP_SECRET
+  credentials:
+    username: harbor-registry-user
+    # must contain values REGISTRY_PASSWD and REGISTRY_HTPASSWD
+    existingSecret: harbor-jobservice
+  
+jobservice:
+  existingSecret: "harbor-jobservice"
+  # Key within the existing secret for the job service secret
+  existingSecretKey: JOBSERVICE_SECRET
+
 
 database:
   type: external
@@ -81,10 +99,6 @@ database:
   # If it <= 0, then there is no limit on the number of open connections.
   # Note: the default number of connections is 1024 for harbor's postgres.
   maxOpenConns: 900
-  ## Additional deployment annotations
-  podAnnotations: {}
-  ## Additional deployment labels
-  podLabels: {}
 
 
 redis:
@@ -95,7 +109,7 @@ redis:
     # support redis, redis+sentinel
     # addr for redis: <host_redis>:<port_redis>
     # addr for redis+sentinel: <host_sentinel1>:<port_sentinel1>,<host_sentinel2>:<port_sentinel2>,<host_sentinel3>:<port_sentinel3>
-    addr: "192.168.0.2:6379"
+    addr: "hostname:6379"
     # The name of the set of Redis instances to monitor, it must be set to support redis+sentinel
     sentinelMasterSet: ""
     # TLS configuration for redis connection
@@ -118,9 +132,4 @@ redis:
     # cacheLayerDatabaseIndex: "7"
     # username field can be an empty string, and it will be authenticated against the default user
     # If using existingSecret, the key must be REDIS_PASSWORD, if ACL mode enabled, also inlcudes data of username, the keys must be REDIS_USERNAME
-    existingSecret: ""
-  ## Additional deployment annotations
-  podAnnotations: {}
-  ## Additional deployment labels
-  podLabels: {}
-
+    existingSecret: "redis"
