@@ -7,4 +7,4 @@ kind: Kustomization
 # See https://github.com/kubernetes-sigs/kustomize/blob/master/examples/remoteBuild.md
 # for the // syntax kustomize uses for remote kustomization files
 resources:
-  - https://github.com/kubernetes-csi/external-snapshotter//client/config/crd?timeout=120&ref=release-8.3
+  - https://github.com/kubernetes-csi/external-snapshotter//client/config/crd?timeout=120&ref=v8.4.0
